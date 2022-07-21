@@ -1,3 +1,11 @@
+let envs = [
+    "dev",
+    "int",
+    "rct",
+    "pprod",
+    "prod"
+];
+
 let services = [
     "algorithm",
     "measurement",
@@ -42,16 +50,36 @@ let services = [
     // "timeseries-ingestion-engine",
     // "data-catalogue"
 ];
-let env = "int";
+let servicesOptions = document.getElementById("services");
+servicesOptions.innerHTML = "<option value=\"\">--Please choose an option--</option>\n" +
+    services
+        .map(env => "<option value=\"" + env + "\">" + env + "</option>")
+        .join("\n");
 
-showAll(env, services);
+let envsOptions = document.getElementById("envs");
+envsOptions.innerHTML = "<option value=\"\">--Please choose an option--</option>\n" +
+    envs
+        .map(service => "<option value=\"" + service + "\">" + service + "</option>")
+        .join("\n");
+
+let ok = document.getElementById("ok");
+ok.addEventListener("click", async ev => {
+    if (envsOptions.value !== "" && servicesOptions.value !== "") {
+        console.log(envsOptions.value, servicesOptions.value);
+        const card = await serviceCard(envsOptions.value, servicesOptions.value);
+        console.log(card)
+        let bord = document.getElementById("bord")
+        bord.innerHTML = card
+    }
+})
+
+// showAll(env, services);
 
 async function showAll(env, services) {
     let servicesCard = await showServices(env, services)
     console.log(servicesCard)
     let bord = document.getElementById("bord")
     bord.innerHTML = servicesCard
-
 }
 
 async function showServices(env, services) {
@@ -80,19 +108,28 @@ async function serviceCard(env, service) {
         "<p>" + new Date(value.git.commit.time).toUTCString() + "</p>" +
         "<h3>documentation:</h3>" +
         "<a href='" + getDocumentationUrl(env, service) + "'>swagger-ui</a>" +
+        "<h3>actuator info:</h3>" +
+        "<a href='" + getActuatorInfo(env, service) + "'>actuator</a>" +
         "</div>";
 }
 
 async function actuatorInfo(env, service) {
-    return await fetch(getUrl(env) + service + "/actuator/info")
+    let url = getActuatorInfo(env, service);
+    console.log(env, service, url);
+    return await fetch(url)
         .then(response => response.json())
         .then((data) => data)
         .catch(reason => undefined);
 }
 
+function getActuatorInfo(env, service) {
+    return getUrl(env) + service + "/actuator/info";
+}
 
 function getUrl(env) {
     switch (env) {
+        case "dev":
+            return "https://backend-api-dev.energisme.net/"
         case "int":
             return "https://backend-api-int.energisme.net/"
         case "rct":
